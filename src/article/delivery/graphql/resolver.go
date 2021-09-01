@@ -157,7 +157,7 @@ func (r resolver) UpdateArticle(params graphql.ResolveParams) (interface{}, erro
 		return nil, err
 	}
 
-	return *updatedArticle, nil
+	return title, nil
 }
 
 func (r resolver) StoreArticle(params graphql.ResolveParams) (interface{}, error) {
@@ -184,8 +184,7 @@ func (r resolver) StoreArticle(params graphql.ResolveParams) (interface{}, error
 	if err := r.articleService.Store(ctx, storedArticle); err != nil {
 		return nil, err
 	}
-
-	return *storedArticle, nil
+	return title, nil
 }
 
 func (r resolver) DeleteArticle(params graphql.ResolveParams) (interface{}, error) {
