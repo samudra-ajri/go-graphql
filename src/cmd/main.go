@@ -12,33 +12,28 @@ import (
 	"github.com/graphql-go/handler"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 
 	_graphQLArticleDelivery "github.com/samudra-ajri/go-graphql/src/article/delivery/graphql"
 	_articleRepo "github.com/samudra-ajri/go-graphql/src/article/repository/mysql"
 	_articleUcase "github.com/samudra-ajri/go-graphql/src/article/usecase"
 	_authorRepo "github.com/samudra-ajri/go-graphql/src/author/repository/mysql"
+	"github.com/samudra-ajri/go-graphql/src/config"
 	"github.com/samudra-ajri/go-graphql/src/middleware"
 )
 
 func init() {
-	viper.SetConfigFile(`config.json`)
-	err := viper.ReadInConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	if viper.GetBool(`debug`) {
+	appName := config.GetConfig().AppName
+	if appName == "local" || appName == "development" {
 		log.Println("Service RUN on DEBUG mode")
 	}
 }
 
 func main() {
-	dbHost := viper.GetString(`database.host`)
-	dbPort := viper.GetString(`database.port`)
-	dbUser := viper.GetString(`database.user`)
-	dbPass := viper.GetString(`database.pass`)
-	dbName := viper.GetString(`database.name`)
+	dbHost := config.GetConfig().DbHost
+	dbPort := config.GetConfig().DbPort
+	dbUser := config.GetConfig().DbUser
+	dbPass := config.GetConfig().DbPassword
+	dbName := config.GetConfig().DbName
 	connection := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 	val := url.Values{}
 	val.Add("parseTime", "1")
@@ -66,7 +61,7 @@ func main() {
 	authorRepo := _authorRepo.NewMysqlAuthorRepository(dbConn)
 	ar := _articleRepo.NewMysqlArticleRepository(dbConn)
 
-	timeoutContext := time.Duration(viper.GetInt("context.timeout")) * time.Second
+	timeoutContext := time.Duration(2) * time.Second
 	au := _articleUcase.NewArticleUsecase(ar, authorRepo, timeoutContext)
 
 	schema := _graphQLArticleDelivery.NewSchema(_graphQLArticleDelivery.NewResolver(au))
@@ -87,5 +82,5 @@ func main() {
 	e.GET("/graphql", echo.WrapHandler(graphQLHandler))
 	e.POST("/graphql", echo.WrapHandler(graphQLHandler))
 
-	log.Fatal(e.Start(viper.GetString("server.address")))
+	log.Fatal(e.Start(":" + config.GetConfig().AppPort))
 }
