@@ -1,0 +1,1 @@
+Simple crud using go and graphql with clean architecture
