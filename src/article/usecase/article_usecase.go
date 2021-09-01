@@ -143,15 +143,15 @@ func (a *articleUsecase) GetByTitle(c context.Context, title string) (res domain
 	return
 }
 
-func (a *articleUsecase) Store(c context.Context, m *domain.Article) (err error) {
+func (a *articleUsecase) Store(c context.Context, ar *domain.Article) (err error) {
 	ctx, cancel := context.WithTimeout(c, a.contextTimeout)
 	defer cancel()
-	existedArticle, _ := a.GetByTitle(ctx, m.Title)
+	existedArticle, _ := a.GetByTitle(ctx, ar.Title)
 	if existedArticle != (domain.Article{}) {
 		return domain.ErrConflict
 	}
 
-	err = a.articleRepo.Store(ctx, m)
+	err = a.articleRepo.Store(ctx, ar)
 	return
 }
 

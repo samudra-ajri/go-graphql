@@ -3,7 +3,6 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/graphql-go/graphql"
 
@@ -149,10 +148,9 @@ func (r resolver) UpdateArticle(params graphql.ResolveParams) (interface{}, erro
 	}
 
 	updatedArticle := &domain.Article{
-		ID:        int64(id),
-		Title:     title,
-		Content:   content,
-		UpdatedAt: time.Now(),
+		ID:      int64(id),
+		Title:   title,
+		Content: content,
 	}
 
 	if err := r.articleService.Update(ctx, updatedArticle); err != nil {
