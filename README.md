@@ -1,8 +1,11 @@
 Simple crud using go and graphql with clean architecture.
 
-##### How to run
-- clone this repo
-- cd to go-graphql/src
-- `go mod tidy`
-- `go run cmd/main.go`
-- open `localhost:9090/grahpql`
+#### How to run
+
+```
+$ cd go-graphql/src
+$ go mod tidy
+$ go run cmd/main.go
+```
+
+Next, open `localhost:9090/grahpql`
