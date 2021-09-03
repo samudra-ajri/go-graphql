@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"github.com/qustavo/dotsql"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -38,6 +39,13 @@ func main() {
 		cli.IntFlag{
 			Name:  "step",
 			Value: 0,
+		},
+	}
+
+	seedFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "table",
+			Value: "all",
 		},
 	}
 
@@ -109,6 +117,31 @@ func main() {
 				return nil
 			},
 		},
+		{
+			Name:  "seed",
+			Usage: "./migration_cli seed OR ./migration_cli seed --table <table_name>",
+			Flags: seedFlags,
+			Action: func(c *cli.Context) error {
+
+				dotSeeder, err := dotsql.LoadFromFile("./db/seeds/master_data.sql")
+				if err != nil {
+					logrus.Error("Error seeder file: " + err.Error())
+				}
+
+				tableName := c.String("table")
+				if tableName == "all" {
+					for key := range dotSeeder.QueryMap() {
+						if key != "check-table-existence" {
+							seedTable(key, dotSeeder, db)
+						}
+					}
+				} else {
+					seedTable(tableName, dotSeeder, db)
+				}
+
+				return nil
+			},
+		},
 	}
 
 	err = app.Run(os.Args)
@@ -136,8 +169,41 @@ func executeDB(db *sql.DB, direction migrate.MigrationDirection, steps int) (int
 
 	n, err := migrate.ExecMax(db, "mysql", migrations, direction, steps)
 	if err != nil {
-		logrus.Error("Error migration file: " + err.Error())
+		logrus.Error("Error migration: " + err.Error())
 	}
 
 	return n, err
+}
+
+func isTableExist(tableName string, dot *dotsql.DotSql, db *sql.DB) bool {
+	row, err := dot.QueryRow(db, "check-table-existence", tableName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var exist int
+	err = row.Scan(&exist)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if exist == 1 {
+		return true
+	}
+
+	return false
+}
+
+func seedTable(tableName string, dot *dotsql.DotSql, db *sql.DB) {
+
+	if !isTableExist(tableName, dot, db) {
+		logrus.Error("Table ", tableName, " not exist")
+	} else {
+		res, err := dot.Exec(db, tableName)
+		if err != nil {
+			logrus.Error("Error seeder ", tableName, ": ", err.Error())
+		} else {
+			row, _ := res.RowsAffected()
+			logrus.Info("Success seed ", tableName, " : ", row, " rows inserted")
+		}
+	}
 }
